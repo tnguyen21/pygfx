@@ -13,7 +13,12 @@ def to_websafe(img: np.ndarray) -> np.ndarray:
     
     return cv2.LUT(img, lut)
 
-def bw_floyd_steinberg_dither(img: np.ndarray) -> np.ndarray:
+def tommy_dither(img: np.ndarray) -> np.ndarray:
+    """
+    This isn't really dithering. I'm doing a bunch of messed up math.
+    But it creates a cool effect, so I'm keeping it
+    """
+    
     img = img.astype(np.float32)
     levels = [0, 51, 102, 153, 204, 255]
     lut = np.zeros(256, np.uint8)
