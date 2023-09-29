@@ -28,6 +28,18 @@ def ordered_dither(img: np.ndarray) -> np.ndarray:
     return new_img
 
 
+def ordered_dither_2(img: np.ndarray) -> np.ndarray:
+    M = np.array([[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]]) / 16
+    h, w = img.shape[:2]
+    new_img = np.zeros((h, w, 3), np.uint8)
+    for y in range(h):
+        for x in range(w):
+            old_pixel = img[y, x]
+            new_pixel = [min(255, p + M[y % 4, x % 4] * 255) for p in old_pixel]
+            new_img[y, x] = new_pixel
+    return new_img
+
+
 def tommy_dither(img: np.ndarray) -> np.ndarray:
     """
     This isn't really dithering. I'm doing a bunch of messed up math.
