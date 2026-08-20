@@ -2,6 +2,14 @@
 
 some implementations of image processing algorithms with only numpy and opencv2 -- for fun!
 
+## install
+
+```sh
+uv tool install --editable .   # editable: preset tweaks apply without reinstall
+pygfx photo.jpg --preset monk --save   # presets: monk, astro, fog, bayer
+pygfx-lab photo.jpg                    # live sliders + hot-reload of shaders.py
+```
+
 ![birb.jpg](birb.jpg)
 
 ![kuwahara_birb.png](kuwahara_birb.png)

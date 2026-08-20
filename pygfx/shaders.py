@@ -1,5 +1,5 @@
-import numpy as np
 import cv2
+import numpy as np
 
 
 def box_blur(img: np.ndarray, kernel_sz: int = 3) -> np.ndarray:

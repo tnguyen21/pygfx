@@ -1,0 +1,21 @@
+[project]
+name = "pygfx"
+version = "0.1.0"
+description = "print-style image pipeline: dither, halftone, duotone presets"
+requires-python = ">=3.10"
+dependencies = ["numpy", "opencv-python"]
+
+[project.scripts]
+pygfx = "pygfx.main:main"
+pygfx-lab = "pygfx.lab:main"
+
+[tool.ruff]
+line-length = 144
+
+[tool.ruff.lint]
+# star imports are house style
+ignore = ["F403", "F405"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
