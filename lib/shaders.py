@@ -16,28 +16,71 @@ def to_websafe(img: np.ndarray) -> np.ndarray:
     return cv2.LUT(img, lut)
 
 
-def ordered_dither(img: np.ndarray) -> np.ndarray:
-    M = np.array([[0, 2], [3, 1]]) / 4
-    h, w = img.shape[:2]
-    new_img = np.zeros((h, w, 3), np.uint8)
-    for y in range(h):
-        for x in range(w):
-            old_pixel = img[y, x]
-            new_pixel = [min(255, p + M[y % 2, x % 2] * 255) for p in old_pixel]
-            new_img[y, x] = new_pixel
-    return new_img
+BAYER2 = np.array([[0, 2], [3, 1]]) / 4
+BAYER4 = np.array([[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]]) / 16
 
 
-def ordered_dither_2(img: np.ndarray) -> np.ndarray:
-    M = np.array([[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]]) / 16
-    h, w = img.shape[:2]
-    new_img = np.zeros((h, w, 3), np.uint8)
-    for y in range(h):
-        for x in range(w):
-            old_pixel = img[y, x]
-            new_pixel = [min(255, p + M[y % 4, x % 4] * 255) for p in old_pixel]
-            new_img[y, x] = new_pixel
-    return new_img
+def _gray(img: np.ndarray) -> np.ndarray:
+    return cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if img.ndim == 3 else img
+
+
+def ordered_dither(img: np.ndarray, M: np.ndarray = BAYER4) -> np.ndarray:
+    """Threshold against a tiled Bayer matrix. Returns a 1-bit (0/255) mask."""
+    g = _gray(img).astype(np.float32) / 255
+    h, w = g.shape
+    n = M.shape[0]
+    thresh = np.tile(M, (h // n + 1, w // n + 1))[:h, :w]
+    return np.where(g > thresh, 255, 0).astype(np.uint8)
+
+
+def noise_dither(img: np.ndarray, seed: int = 0) -> np.ndarray:
+    """Stochastic threshold — grainy 1-bit, like a photocopied photo."""
+    g = _gray(img).astype(np.float32) / 255
+    thresh = np.random.default_rng(seed).random(g.shape, dtype=np.float32)
+    return np.where(g > thresh, 255, 0).astype(np.uint8)
+
+
+def halftone(img: np.ndarray, cell: int = 6, angle: float = 15.0) -> np.ndarray:
+    """Angled dot screen — dot radius grows with darkness. Returns 1-bit."""
+    g = _gray(img).astype(np.float32) / 255
+    h, w = g.shape
+    yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
+    a = np.deg2rad(angle)
+    u = (xx * np.cos(a) + yy * np.sin(a)) / cell
+    v = (-xx * np.sin(a) + yy * np.cos(a)) / cell
+    r = np.sqrt((u - np.round(u)) ** 2 + (v - np.round(v)) ** 2)
+    return np.where(r >= (1 - g) * 0.75, 255, 0).astype(np.uint8)
+
+
+def tone_curve(img: np.ndarray, strength: float = 8.0, mid: float = 0.5) -> np.ndarray:
+    """Sigmoid contrast crush. Higher strength = harder shadows/highlights."""
+    x = img.astype(np.float32) / 255
+    y = 1 / (1 + np.exp(-strength * (x - mid)))
+    lo = 1 / (1 + np.exp(strength * mid))
+    hi = 1 / (1 + np.exp(-strength * (1 - mid)))
+    return np.clip(np.rint((y - lo) / (hi - lo) * 255), 0, 255).astype(np.uint8)
+
+
+def duotone(mask: np.ndarray, ink=(0, 0, 0), paper=(255, 255, 255)) -> np.ndarray:
+    """Map a 1-bit mask to two BGR colors: 0 -> ink, 255 -> paper."""
+    out = np.empty((*mask.shape[:2], 3), np.uint8)
+    out[mask == 0] = ink
+    out[mask != 0] = paper
+    return out
+
+
+def grain(img: np.ndarray, amount: float = 12.0, seed: int = 0) -> np.ndarray:
+    noise = np.random.default_rng(seed).normal(0, amount, img.shape[:2]).astype(np.float32)
+    if img.ndim == 3:
+        noise = noise[..., None]
+    return np.clip(img.astype(np.float32) + noise, 0, 255).astype(np.uint8)
+
+
+def plate_shift(img: np.ndarray, dx: int = 3, dy: int = 1, channel: int = 2) -> np.ndarray:
+    """Misregistration: roll one BGR channel to fake an offset print plate."""
+    out = img.copy()
+    out[..., channel] = np.roll(img[..., channel], (dy, dx), axis=(0, 1))
+    return out
 
 
 def tommy_dither(img: np.ndarray) -> np.ndarray:
