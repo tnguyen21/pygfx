@@ -7,7 +7,7 @@ some implementations of image processing algorithms with only numpy and opencv2 
 ```sh
 uv tool install --editable .   # editable: preset tweaks apply without reinstall
 pygfx photo.jpg --preset monk --save   # presets: monk, astro, fog, bayer
-pygfx-lab photo.jpg                    # live sliders + hot-reload of shaders.py
+pygfx-web photo.jpg                    # browser mutation grid: click a tile to evolve toward it
 ```
 
 ![birb.jpg](birb.jpg)
