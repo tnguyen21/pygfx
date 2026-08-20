@@ -52,6 +52,11 @@ def halftone(img: np.ndarray, cell: int = 6, angle: float = 15.0) -> np.ndarray:
     return np.where(r >= (1 - g) * 0.75, 255, 0).astype(np.uint8)
 
 
+def threshold(img: np.ndarray, level: int = 128) -> np.ndarray:
+    """Hard cut with no dither pattern. Returns a 1-bit (0/255) mask."""
+    return np.where(_gray(img) >= level, 255, 0).astype(np.uint8)
+
+
 def tone_curve(img: np.ndarray, strength: float = 8.0, mid: float = 0.5) -> np.ndarray:
     """Sigmoid contrast crush. Higher strength = harder shadows/highlights."""
     x = img.astype(np.float32) / 255
